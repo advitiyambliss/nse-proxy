@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/nse.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/nse",
+      "dest": "/api/nse.js"
+    }
+  ]
+}
