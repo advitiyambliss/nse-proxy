@@ -1,27 +1,31 @@
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   try {
     const home = await fetch("https://www.nseindia.com", {
       headers: {
         "User-Agent": "Mozilla/5.0",
         "Accept": "text/html"
-      },
-      timeout: 10000
+      }
     });
 
-    const cookies = home.headers.raw()["set-cookie"];
-    if (!cookies) throw new Error("No NSE cookies");
+    const cookies = home.headers.get("set-cookie");
+    if (!cookies) {
+      res.status(500).json({ error: true, message: "No NSE cookies" });
+      return;
+    }
 
     const api = await fetch("https://www.nseindia.com/api/allIndices", {
       headers: {
         "User-Agent": "Mozilla/5.0",
         "Accept": "application/json",
         "Referer": "https://www.nseindia.com/",
-        "Cookie": cookies.join("; ")
-      },
-      timeout: 10000
+        "Cookie": cookies
+      }
     });
 
-    if (!api.ok) throw new Error("NSE API blocked");
+    if (!api.ok) {
+      res.status(500).json({ error: true, message: "NSE API blocked" });
+      return;
+    }
 
     const json = await api.json();
 
@@ -33,12 +37,19 @@ export default async function handler(req, res) {
     });
 
     if (!out.nifty50 || !out.midcap150 || !out.smallcap250) {
-      throw new Error("Missing index values");
+      res.status(500).json({ error: true, message: "Missing index values" });
+      return;
     }
 
-    res.status(200).json({ source: "NSE", data: out });
+    res.status(200).json({
+      source: "NSE",
+      data: out
+    });
 
   } catch (e) {
-    res.status(500).json({ error: true, message: e.message });
+    res.status(500).json({
+      error: true,
+      message: e.message
+    });
   }
-}
+};
